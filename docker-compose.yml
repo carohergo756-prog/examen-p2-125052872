@@ -1,0 +1,60 @@
+services:
+  hadoop:
+    build: ./hadoop
+    container_name: datamart-hadoop
+    volumes:
+      - ./ventas_125052872.csv:/data/input/ventas_125052872.csv:ro
+      - ./mapreduce:/workspace/mapreduce
+      - ./scripts:/workspace/scripts
+    networks:
+      - datamart-net
+
+  db:
+    image: mysql:8.0
+    container_name: datamart-db
+    env_file:
+      - .env
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3308:3306"
+    networks:
+      - datamart-net
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p\"$$MYSQL_ROOT_PASSWORD\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+
+  api:
+    build: ./api
+    container_name: datamart-api
+    env_file:
+      - .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+    volumes:
+      - ./mapreduce:/app/mapreduce
+      - ./scripts:/app/scripts
+    ports:
+      - "5001:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - datamart-net
+
+
+networks:
+  datamart-net:
+    driver: bridge
+
+volumes:
+  mysql_data:

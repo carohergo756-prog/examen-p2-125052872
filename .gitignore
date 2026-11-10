@@ -1,0 +1,8 @@
+*.csv
+.env
+__pycache__/
+*.pyc
+mapreduce/resultado_hadoop/
+mapreduce/resultado_hadoop_tiempo/
+.DS_Store
+Thumbs.db
